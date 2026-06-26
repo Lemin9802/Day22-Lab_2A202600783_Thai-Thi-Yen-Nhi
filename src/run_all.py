@@ -1,74 +1,138 @@
 """
-Chạy tất cả các bước lab theo thứ tự hoặc chỉ một bước cụ thể.
+Run all Day22 lab steps from one entrypoint.
 
-Cách dùng:
-    python run_all.py            # chạy tất cả 4 bước
-    python run_all.py --step 1   # chỉ chạy Bước 1
-    python run_all.py --step 3   # chỉ chạy Bước 3 (RAGAS ~15-30 phút)
+Examples:
+    python src/run_all.py --step 1
+    python src/run_all.py --step 2
+    python src/run_all.py --step 3
+    python src/run_all.py --step 4
+    python src/run_all.py --step all
+
+For fast RAGAS smoke tests:
+    python src/run_all.py --step 3 --ragas-limit 1
+    python src/run_all.py --step 3 --ragas-limit 2 --ragas-no-eval
 """
-import sys
 import argparse
-import importlib
+import importlib.util
+import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+
+SRC_DIR = Path(__file__).parent
 
 
-STEPS = {
-    1: ("Bước 1: LangSmith RAG Pipeline",   "01_langsmith_rag_pipeline"),
-    2: ("Bước 2: Prompt Hub & A/B Routing",  "02_prompt_hub_ab_routing"),
-    3: ("Bước 3: RAGAS Evaluation",          "03_ragas_evaluation"),
-    4: ("Bước 4: Guardrails AI Validators",  "04_guardrails_validator"),
+STEP_FILES = {
+    "1": "01_langsmith_rag_pipeline.py",
+    "2": "02_prompt_hub_ab_routing.py",
+    "3": "03_ragas_evaluation.py",
+    "4": "04_guardrails_validator.py",
 }
 
 
-def run_step(step_num: int):
-    title, module_name = STEPS[step_num]
-    print(f"\n{'=' * 60}")
-    print(f"  {title}")
-    print(f"{'=' * 60}")
+def load_module(step: str):
+    """
+    Load a step module from a filename that starts with a number.
+
+    Python cannot import modules such as `01_langsmith_rag_pipeline`
+    through normal import syntax, so this uses importlib.
+    """
+    script_path = SRC_DIR / STEP_FILES[step]
+
+    if not script_path.exists():
+        raise FileNotFoundError(f"Step file not found: {script_path}")
+
+    module_name = f"day22_step_{step}"
+    spec = importlib.util.spec_from_file_location(module_name, script_path)
+
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load module spec for {script_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    return module, script_path
+
+
+def run_step(step: str, forwarded_args: list[str] | None = None):
+    """
+    Run a single step's main() function.
+
+    Args:
+        step: one of "1", "2", "3", "4"
+        forwarded_args: optional CLI args forwarded to the step module.
+                        This is mainly used for RAGAS limit/no-eval options.
+    """
+    forwarded_args = forwarded_args or []
+
+    print("\n" + "=" * 80)
+    print(f"Running Day22 Step {step}: {STEP_FILES[step]}")
+    print("=" * 80)
+
+    module, script_path = load_module(step)
+
+    if not hasattr(module, "main"):
+        raise AttributeError(f"{script_path} does not expose a main() function")
+
+    old_argv = sys.argv[:]
+
     try:
-        module = importlib.import_module(module_name)
+        sys.argv = [str(script_path)] + forwarded_args
         module.main()
-        print(f"\n✅ {title} — HOÀN THÀNH")
-        return True
-    except SystemExit as e:
-        if e.code != 0:
-            print(f"\n❌ {title} — DỪNG (config thiếu hoặc lỗi)")
-        return e.code == 0
-    except Exception as e:
-        print(f"\n❌ {title} — LỖI: {e}")
-        return False
+    finally:
+        sys.argv = old_argv
+
+    print(f"\nCompleted Day22 Step {step}.")
+
+
+def build_step3_args(args) -> list[str]:
+    """
+    Translate run_all.py arguments into arguments understood by step 3.
+    """
+    step3_args = []
+
+    if args.ragas_limit is not None:
+        step3_args.extend(["--limit", str(args.ragas_limit)])
+
+    if args.ragas_no_eval:
+        step3_args.append("--no-eval")
+
+    return step3_args
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Chạy Day22 Lab: LangSmith + Prompt Versioning + RAGAS + Guardrails"
+        description="Run Day22 LLMOps lab steps without editing source files."
     )
+
     parser.add_argument(
-        "--step", type=int, choices=[1, 2, 3, 4],
-        help="Chỉ chạy bước được chỉ định (1-4)"
+        "--step",
+        choices=["1", "2", "3", "4", "all"],
+        default="all",
+        help="Which lab step to run. Default: all.",
     )
+
+    parser.add_argument(
+        "--ragas-limit",
+        type=int,
+        default=None,
+        help="Forward --limit N to step 3 RAGAS evaluation.",
+    )
+
+    parser.add_argument(
+        "--ragas-no-eval",
+        action="store_true",
+        help="Forward --no-eval to step 3 to build samples without running RAGAS metrics.",
+    )
+
     args = parser.parse_args()
 
-    steps_to_run = [args.step] if args.step else list(STEPS.keys())
+    steps_to_run = ["1", "2", "3", "4"] if args.step == "all" else [args.step]
 
-    results = {}
-    for step_num in steps_to_run:
-        success = run_step(step_num)
-        results[step_num] = success
-        if not success and not args.step:
-            print(f"\n⛔ Dừng lại do Bước {step_num} thất bại.")
-            break
+    for step in steps_to_run:
+        forwarded_args = build_step3_args(args) if step == "3" else []
+        run_step(step, forwarded_args=forwarded_args)
 
-    # Tổng kết
-    print(f"\n{'=' * 60}")
-    print("  Tổng kết")
-    print(f"{'=' * 60}")
-    for step_num, success in results.items():
-        title = STEPS[step_num][0]
-        status = "✅ PASS" if success else "❌ FAIL"
-        print(f"  {status}  {title}")
+    print("\nAll requested Day22 steps completed.")
 
 
 if __name__ == "__main__":
