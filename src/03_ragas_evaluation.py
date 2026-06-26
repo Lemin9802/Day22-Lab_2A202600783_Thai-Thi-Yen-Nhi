@@ -1,201 +1,390 @@
 """
-Bước 3 — RAGAS Evaluation
-===========================
-NHIỆM VỤ:
-  1. Chạy 50 QA pairs qua CẢ 2 prompt version, lưu answers + contexts
-  2. Tạo EvaluationDataset với các SingleTurnSample object
-  3. Đánh giá với 4 RAGAS metrics: faithfulness, answer_relevancy,
-     context_recall, context_precision
-  4. In bảng so sánh V1 vs V2
-  5. Lưu kết quả vào data/ragas_report.json
-
-DELIVERABLE: faithfulness ≥ 0.8 cho ít nhất 1 prompt version
-             + file data/ragas_report.json được tạo ra
-
-⏰ LƯU Ý: Bước này mất ~15-30 phút. Hãy bắt đầu sớm!
+Bước 3 - RAGAS Evaluation
+=========================
+  1. Chạy 50 QA pairs qua cả hai prompt versions V1 và V2
+  2. Tạo EvaluationDataset với SingleTurnSample
+  3. Chấm 4 metrics:
+     - faithfulness
+     - answer_relevancy
+     - context_recall
+     - context_precision
+  4. Lưu report JSON và chart PNG vào evidence/
 """
-import sys
+import argparse
 import json
-import warnings
-warnings.filterwarnings("ignore")
-
+import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import config  # ⚠️ phải import trước LangChain
+# Import config trước LangChain/LangSmith.
+import config
 
-import numpy as np
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from ragas import evaluate, EvaluationDataset, SingleTurnSample
-from ragas.metrics import faithfulness, answer_relevancy, context_recall, context_precision
+from langsmith import traceable
+
+from ragas import EvaluationDataset, evaluate
+from ragas.dataset_schema import SingleTurnSample
+from ragas.metrics import (
+    Faithfulness,
+    AnswerRelevancy,
+    LLMContextRecall,
+    LLMContextPrecisionWithReference,
+)
+from ragas.llms import LangchainLLMWrapper
+from ragas.embeddings import LangchainEmbeddingsWrapper
 
 from utils.llm_factory import get_llm, get_embeddings
-from utils.data_loader import load_knowledge_base, split_text, build_vectorstore
+from utils.data_loader import (
+    load_knowledge_base,
+    split_text,
+    build_vectorstore,
+    build_section_anchor_retriever,
+)
 from qa_pairs import QA_PAIRS
 
 
-# ── 1. Prompt Templates (copy từ Bước 2) ──────────────────────────────────
-# TODO: Copy SYSTEM_V1 và SYSTEM_V2 mà bạn đã viết ở file 02_prompt_hub_ab_routing.py
-SYSTEM_V1 = ...
-PROMPT_V1 = ChatPromptTemplate.from_messages([
-    ("system", SYSTEM_V1),
-    ("human",  "{question}"),
-])
+SYSTEM_V1 = """
+You are a concise factual RAG assistant answering questions about the paper
+"The New SDLC With Vibe Coding".
 
-SYSTEM_V2 = ...
-PROMPT_V2 = ChatPromptTemplate.from_messages([
-    ("system", SYSTEM_V2),
-    ("human",  "{question}"),
-])
+Use only the provided context.
+If the context does not contain the answer, say you do not know based on the provided context.
 
-PROMPTS = {"v1": PROMPT_V1, "v2": PROMPT_V2}
+Answer style:
+- Be direct and concise.
+- Prefer one short paragraph or a short bullet list.
+- Do not add extra implications unless the question asks for them.
 
-
-# ── 2. Setup Vectorstore ───────────────────────────────────────────────────
-def setup_vectorstore():
-    """Tái sử dụng — tạo FAISS vectorstore từ knowledge base."""
-    embeddings  = get_embeddings()
-    text        = load_knowledge_base()
-    chunks      = split_text(text)
-    return build_vectorstore(chunks, embeddings)
+Context:
+{context}
+""".strip()
 
 
-# ── 3. Chạy RAG và thu thập kết quả ───────────────────────────────────────
-def run_rag(retriever, llm, prompt, question: str) -> dict:
-    """
-    Chạy RAG chain cho 1 câu hỏi.
+SYSTEM_V2 = """
+You are a structured engineering RAG assistant answering questions about the paper
+"The New SDLC With Vibe Coding".
 
-    ⚠️ QUAN TRỌNG: trả về contexts là LIST of strings, KHÔNG phải string đã ghép!
-    RAGAS cần từng đoạn riêng để tính context_recall và context_precision.
+Use only the provided context.
+If the context does not contain the answer, say you do not know based on the provided context.
 
-    Trả về: {"answer": str, "contexts": list[str]}
-    """
-    # TODO: Retrieve documents từ retriever
-    docs = ...
+Answer style:
+- Structure the answer for a software engineering audience.
+- When useful, organize the answer as:
+  1. Definition
+  2. Why it matters
+  3. SDLC or engineering implication
+- Keep the answer grounded in the retrieved context.
+- Do not invent facts outside the context.
 
-    # TODO: Tạo contexts là danh sách page_content (KHÔNG ghép chuỗi ở đây)
-    # Gợi ý: contexts = [doc.page_content for doc in docs]
-    contexts = ...   # phải là list[str] !
-
-    # TODO: Ghép contexts thành 1 string để truyền vào {context} của prompt
-    ctx_str = "\n\n".join(contexts)
-
-    # TODO: Chạy chain (prompt | llm | StrOutputParser()).invoke(...)
-    answer = (prompt | llm | StrOutputParser()).invoke({
-        "context":  ...,
-        "question": ...,
-    })
-
-    # TODO: Trả về dict với answer và contexts (list)
-    return {"answer": ..., "contexts": ...}
+Context:
+{context}
+""".strip()
 
 
-def collect_rag_outputs(vectorstore, prompt_version: str) -> list:
-    """
-    Chạy tất cả 50 QA pairs qua prompt version được chỉ định.
-    Trả về: list of dict với keys: question, reference, answer, contexts
-    """
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-    llm       = get_llm()
-    prompt    = PROMPTS[prompt_version]
-
-    results = []
-    print(f"\n🚀 Đang chạy 50 câu hỏi với prompt {prompt_version} ...")
-
-    for i, qa in enumerate(QA_PAIRS, 1):
-        # TODO: Gọi run_rag() cho câu hỏi hiện tại
-        out = ...
-
-        # TODO: Append vào results dict với 4 keys
-        results.append({
-            "question":  qa["question"],
-            "reference": qa["reference"],
-            "answer":    ...,        # out["answer"]
-            "contexts":  ...,        # out["contexts"] — phải là list[str] !
-        })
-        print(f"  [{i:02d}/50] {qa['question'][:60]}")
-
-    return results
-
-
-# ── 4. Tạo RAGAS EvaluationDataset ────────────────────────────────────────
-def build_ragas_dataset(rag_results: list) -> EvaluationDataset:
-    """
-    Chuyển đổi kết quả RAG thành RAGAS EvaluationDataset.
-
-    Mỗi SingleTurnSample cần 4 trường:
-      user_input         → câu hỏi
-      response           → câu trả lời đã tạo
-      retrieved_contexts → list[str] các đoạn đã retrieve
-      reference          → đáp án chuẩn (ground truth)
-    """
-    # TODO: Tạo list các SingleTurnSample từ rag_results
-    samples = [
-        SingleTurnSample(
-            user_input=...,           # r["question"]
-            response=...,             # r["answer"]
-            retrieved_contexts=...,   # r["contexts"]
-            reference=...,            # r["reference"]
-        )
-        for r in rag_results
-    ]
-
-    # TODO: Wrap thành EvaluationDataset và trả về
-    return EvaluationDataset(samples=samples)
-
-
-# ── 5. Chạy RAGAS Evaluation ──────────────────────────────────────────────
-def run_ragas_eval(rag_results: list, version: str) -> dict:
-    """
-    Đánh giá kết quả RAG với 4 RAGAS metrics.
-    Trả về: dict {metric_name: mean_score}
-
-    Lưu ý: evaluate() thực hiện rất nhiều lần gọi LLM → mất 5-10 phút / version.
-    """
-    print(f"\n📐 Đang đánh giá RAGAS cho prompt {version} ... (vui lòng chờ ~5-10 phút)")
-
-    # TODO: Tạo EvaluationDataset từ rag_results
-    dataset = ...
-
-    # LLM và Embeddings riêng để RAGAS dùng làm evaluator
-    llm_eval = get_llm(temperature=0)
-    emb_eval = get_embeddings()
-
-    # TODO: Gọi evaluate() với đầy đủ 4 metrics
-    # Gợi ý:
-    #   result = evaluate(
-    #       dataset,
-    #       metrics=[faithfulness, answer_relevancy, context_recall, context_precision],
-    #       llm=llm_eval,
-    #       embeddings=emb_eval,
-    #   )
-    result = evaluate(
-        ...,
-        metrics=[...],
-        llm=...,
-        embeddings=...,
+def create_prompt(system_message: str) -> ChatPromptTemplate:
+    return ChatPromptTemplate.from_messages(
+        [
+            ("system", system_message),
+            ("human", "{question}"),
+        ]
     )
 
-    # Tính mean score cho mỗi metric
-    # result["faithfulness"] trả về list of floats → dùng np.mean()
-    scores = {}
-    for key in ["faithfulness", "answer_relevancy", "context_recall", "context_precision"]:
-        raw = result[key]
-        scores[key] = float(np.mean([v for v in raw if v is not None]))
 
-    # In kết quả
-    print(f"\n📊 Kết quả RAGAS — Prompt {version.upper()}:")
-    for k, v in scores.items():
-        star = " ⭐" if k == "faithfulness" and v >= 0.8 else ""
-        print(f"  {k:30s}: {v:.4f}{star}")
+def setup_vectorstore():
+    embeddings = get_embeddings()
 
-    return scores
+    text = load_knowledge_base()
+    chunks = split_text(text, chunk_size=1500, chunk_overlap=250)
+    print(f"Chunks: {len(chunks)}")
+
+    vectorstore = build_vectorstore(chunks, embeddings)
+    return vectorstore, chunks
 
 
-# ── 6. Main ────────────────────────────────────────────────────────────────
+def build_retriever(vectorstore, chunks):
+    return build_section_anchor_retriever(
+        vectorstore=vectorstore,
+        chunks=chunks,
+        faiss_k=8,
+        bm25_k=8,
+        weights=(0.35, 0.65),
+        max_docs=8,
+    )
+
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+@traceable(name="ragas-rag-run", tags=["ragas", "step3"])
+def run_rag(question: str, prompt, retriever, llm) -> dict:
+    """
+    Return đúng format cần cho RAGAS:
+      answer: str
+      contexts: list[str]
+    """
+    docs = retriever.invoke(question)
+    contexts = [doc.page_content for doc in docs]
+
+    chain = prompt | llm | StrOutputParser()
+    answer = chain.invoke(
+        {
+            "context": format_docs(docs),
+            "question": question,
+        }
+    )
+
+    return {
+        "answer": answer,
+        "contexts": contexts,
+    }
+
+
+def build_samples(limit: int | None = None):
+    """
+    Chạy QA_PAIRS qua cả V1 và V2, tạo:
+      - EvaluationDataset
+      - metadata records để join lại sau khi evaluate
+    """
+    vectorstore, chunks = setup_vectorstore()
+    retriever = build_retriever(vectorstore, chunks)
+    llm = get_llm(temperature=0.0)
+
+    prompts = {
+        "v1": create_prompt(SYSTEM_V1),
+        "v2": create_prompt(SYSTEM_V2),
+    }
+
+    pairs = QA_PAIRS[:limit] if limit else QA_PAIRS
+
+    samples = []
+    records = []
+
+    for i, item in enumerate(pairs, start=1):
+        question = item["question"]
+        reference = item["reference"]
+
+        for version in ["v1", "v2"]:
+            result = run_rag(
+                question=question,
+                prompt=prompts[version],
+                retriever=retriever,
+                llm=llm,
+            )
+
+            sample = SingleTurnSample(
+                user_input=question,
+                response=result["answer"],
+                retrieved_contexts=result["contexts"],
+                reference=reference,
+            )
+
+            samples.append(sample)
+            records.append(
+                {
+                    "question_id": i,
+                    "version": version,
+                    "question": question,
+                    "reference": reference,
+                    "answer": result["answer"],
+                    "num_contexts": len(result["contexts"]),
+                }
+            )
+
+            print(
+                f"[{i:02d}/{len(pairs)}] {version.upper()} "
+                f"question={question[:70]}"
+            )
+            print(f"       answer={result['answer'][:250]}\n")
+
+    dataset = EvaluationDataset(samples=samples)
+    return dataset, records
+
+
+def run_ragas_evaluation(dataset: EvaluationDataset):
+    evaluator_llm = LangchainLLMWrapper(get_llm(temperature=0.0))
+    evaluator_embeddings = LangchainEmbeddingsWrapper(get_embeddings())
+
+    metrics = [
+        Faithfulness(),
+        AnswerRelevancy(),
+        LLMContextRecall(),
+        LLMContextPrecisionWithReference(),
+    ]
+
+    print("Running RAGAS evaluation...")
+    print("This can take a long time with local Ollama.")
+
+    try:
+        result = evaluate(
+            dataset=dataset,
+            metrics=metrics,
+            llm=evaluator_llm,
+            embeddings=evaluator_embeddings,
+            raise_exceptions=False,
+        )
+    except TypeError:
+        result = evaluate(
+            dataset=dataset,
+            metrics=metrics,
+            llm=evaluator_llm,
+            embeddings=evaluator_embeddings,
+        )
+
+    return result
+
+
+def get_metric_columns(df):
+    ignored = {
+        "question_id",
+        "version",
+        "user_input",
+        "response",
+        "retrieved_contexts",
+        "reference",
+        "question",
+        "answer",
+        "num_contexts",
+    }
+
+    metric_cols = []
+
+    for col in df.columns:
+        if col in ignored:
+            continue
+
+        try:
+            if df[col].dtype.kind in "biufc":
+                metric_cols.append(col)
+        except Exception:
+            pass
+
+    return metric_cols
+
+
+def save_reports(result, records: list):
+    import pandas as pd
+
+    root_dir = Path(__file__).parent.parent
+    data_dir = root_dir / "data"
+    evidence_dir = root_dir / "evidence"
+
+    data_dir.mkdir(exist_ok=True)
+    evidence_dir.mkdir(exist_ok=True)
+
+    df = result.to_pandas()
+
+    # RAGAS 0.4.3 names this metric by implementation class.
+    df = df.rename(
+        columns={
+            "llm_context_precision_with_reference": "context_precision",
+        }
+    )
+
+    metadata_df = pd.DataFrame(records)
+
+    for col in ["question_id", "version"]:
+        if col in df.columns:
+            df = df.drop(columns=[col])
+
+    df.insert(0, "question_id", metadata_df["question_id"])
+    df.insert(1, "version", metadata_df["version"])
+
+    metric_cols = get_metric_columns(df)
+
+    overall_metrics = {
+        col: float(df[col].mean())
+        for col in metric_cols
+    }
+
+    by_version_metrics = {}
+    for version in ["v1", "v2"]:
+        sub = df[df["version"] == version]
+        by_version_metrics[version] = {
+            col: float(sub[col].mean())
+            for col in metric_cols
+        }
+
+    report = {
+        "task": "Day22 Task 3 - RAGAS Evaluation",
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "project": config.LANGSMITH_PROJECT,
+        "num_questions": len(records) // 2,
+        "num_samples": len(records),
+        "versions": ["v1", "v2"],
+        "overall_metrics": overall_metrics,
+        "by_version_metrics": by_version_metrics,
+        "metric_columns": metric_cols,
+        "rows": df.where(pd.notnull(df), None).to_dict(orient="records"),
+    }
+
+    data_json_path = data_dir / "ragas_report.json"
+    evidence_json_path = evidence_dir / "03_ragas_report.json"
+    csv_path = evidence_dir / "03_ragas_rows.csv"
+    png_path = evidence_dir / "03_ragas_scores.png"
+
+    data_json_path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    evidence_json_path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    df.to_csv(csv_path, index=False, encoding="utf-8")
+
+    try:
+        import matplotlib.pyplot as plt
+
+        means = df.groupby("version")[metric_cols].mean().T
+        ax = means.plot(kind="bar", figsize=(10, 6))
+        ax.set_title("RAGAS Scores by Prompt Version")
+        ax.set_xlabel("Metric")
+        ax.set_ylabel("Score")
+        ax.set_ylim(0, 1)
+        ax.legend(title="Prompt Version")
+        plt.tight_layout()
+        plt.savefig(png_path, dpi=160)
+        plt.close()
+        print(f"Saved chart: {png_path}")
+    except Exception as e:
+        print(f"Could not create PNG chart: {type(e).__name__}: {e}")
+
+    print(f"Saved data report: {data_json_path}")
+    print(f"Saved evidence report: {evidence_json_path}")
+    print(f"Saved rows CSV: {csv_path}")
+
+    print("\nOverall metrics:")
+    for key, value in overall_metrics.items():
+        print(f"  {key}: {value:.4f}")
+
+    print("\nMetrics by version:")
+    for version, metrics in by_version_metrics.items():
+        print(f"  {version}:")
+        for key, value in metrics.items():
+            print(f"    {key}: {value:.4f}")
+
+    return report
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Only evaluate the first N QA pairs. Useful for smoke tests.",
+    )
+    parser.add_argument(
+        "--no-eval",
+        action="store_true",
+        help="Build RAGAS samples but do not run RAGAS metrics.",
+    )
+    args = parser.parse_args()
+
     print("=" * 60)
     print("  Bước 3: RAGAS Evaluation")
     print("=" * 60)
@@ -203,45 +392,19 @@ def main():
     if not config.validate():
         sys.exit(1)
 
-    # TODO: Tạo vectorstore
-    vectorstore = ...
+    dataset, records = build_samples(limit=args.limit)
 
-    # Thu thập kết quả RAG cho cả V1 và V2
-    v1_results = collect_rag_outputs(vectorstore, "v1")
-    v2_results = collect_rag_outputs(vectorstore, "v2")
+    print(f"Built dataset with {len(records)} samples.")
+    print(f"QA pairs used: {len(records) // 2}")
 
-    # Chạy RAGAS evaluation
-    v1_scores = run_ragas_eval(v1_results, "v1")
-    v2_scores = run_ragas_eval(v2_results, "v2")
+    if args.no_eval:
+        print("Skipping RAGAS metrics because --no-eval was provided.")
+        return
 
-    # In bảng so sánh
-    print("\n" + "=" * 65)
-    print(f"  {'Metric':30s}  {'V1':>8}  {'V2':>8}  Winner")
-    print("=" * 65)
-    for metric in ["faithfulness", "answer_relevancy", "context_recall", "context_precision"]:
-        s1, s2  = v1_scores[metric], v2_scores[metric]
-        winner  = "← V1" if s1 > s2 else "← V2"
-        print(f"  {metric:30s}  {s1:>8.4f}  {s2:>8.4f}  {winner}")
+    result = run_ragas_evaluation(dataset)
+    save_reports(result, records)
 
-    # Kiểm tra mục tiêu
-    best_faith = max(v1_scores["faithfulness"], v2_scores["faithfulness"])
-    if best_faith >= 0.8:
-        print(f"\n✅ Đạt mục tiêu: faithfulness = {best_faith:.4f} ≥ 0.8")
-    else:
-        print(f"\n⚠️  Chưa đạt mục tiêu ({best_faith:.4f} < 0.8).")
-        print("   Gợi ý: giảm chunk_size, tăng k, hoặc điều chỉnh prompt.")
-
-    # TODO: Lưu báo cáo vào data/ragas_report.json
-    report = {
-        "prompt_v1_scores": v1_scores,
-        "prompt_v2_scores": v2_scores,
-        "target_met": best_faith >= 0.8,
-    }
-    report_path = Path(__file__).parent.parent / "data" / "ragas_report.json"
-    # TODO: Ghi report vào file bằng json.dumps hoặc json.dump
-    # Gợi ý: report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    ...
-    print(f"💾 Đã lưu báo cáo vào {report_path}")
+    print("\nTask 3 completed.")
 
 
 if __name__ == "__main__":

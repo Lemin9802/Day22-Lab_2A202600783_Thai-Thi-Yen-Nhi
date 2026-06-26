@@ -1,0 +1,35 @@
+Day22 Task 4 - PII Guardrails Demo
+========================================================================
+Timestamp: 2026-06-26T23:39:25
+Validator: PIIDetector(on_fail=OnFailAction.FIX)
+Detected PII types: email, phone, SSN, credit-card-like number
+========================================================================
+
+[1] Input:
+Contact Alice at alice@example.com for details.
+Passed: True
+Outcome type: ValidationOutcome
+Output:
+Contact Alice at [REDACTED_EMAIL] for details.
+------------------------------------------------------------------------
+[2] Input:
+Call me at +1 415-555-2671 tomorrow.
+Passed: True
+Outcome type: ValidationOutcome
+Output:
+Call me at [REDACTED_PHONE] tomorrow.
+------------------------------------------------------------------------
+[3] Input:
+Customer SSN is 123-45-6789 and card is 4111 1111 1111 1111.
+Passed: True
+Outcome type: ValidationOutcome
+Output:
+Customer SSN is [REDACTED_SSN] and card is [REDACTED_CARD].
+------------------------------------------------------------------------
+[4] Input:
+This sentence has no private information.
+Passed: True
+Outcome type: ValidationOutcome
+Output:
+This sentence has no private information.
+------------------------------------------------------------------------

@@ -1,0 +1,41 @@
+Day22 Task 4 - JSON Guardrails Demo
+========================================================================
+Timestamp: 2026-06-26T23:39:25
+Validator: JSONFormatter(on_fail=OnFailAction.FIX)
+Repairs: markdown fences, single quotes, trailing commas, fallback JSON
+========================================================================
+
+[1] Input:
+```json
+{"name": "Alice", "role": "engineer",}
+```
+Passed: True
+Output is valid JSON: True
+Outcome type: ValidationOutcome
+Output:
+{"name": "Alice", "role": "engineer"}
+------------------------------------------------------------------------
+[2] Input:
+{'name': 'Bob', 'score': 0.91,}
+Passed: True
+Output is valid JSON: True
+Outcome type: ValidationOutcome
+Output:
+{"name": "Bob", "score": 0.91}
+------------------------------------------------------------------------
+[3] Input:
+{"valid": true, "items": [1, 2, 3]}
+Passed: True
+Output is valid JSON: True
+Outcome type: ValidationOutcome
+Output:
+{"valid": true, "items": [1, 2, 3]}
+------------------------------------------------------------------------
+[4] Input:
+not json at all
+Passed: True
+Output is valid JSON: True
+Outcome type: ValidationOutcome
+Output:
+{"error": "Could not parse JSON", "raw_output": "not json at all"}
+------------------------------------------------------------------------

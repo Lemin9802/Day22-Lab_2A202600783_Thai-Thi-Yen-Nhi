@@ -1,0 +1,476 @@
+Day22 Task 2 — Prompt Hub + A/B Routing Log
+========================================================================
+Timestamp: 2026-06-26T21:40:50
+Project: day22-lab
+Prompt V1: day22-sdlc-vibe-coding-v1-concise
+Prompt V2: day22-sdlc-vibe-coding-v2-structured
+Prompt V1 URL: https://smith.langchain.com/prompts/day22-sdlc-vibe-coding-v1-concise/97c7a617?organizationId=e641930e-16b4-43e2-b2ca-6d49399af522
+Prompt V2 URL: https://smith.langchain.com/prompts/day22-sdlc-vibe-coding-v2-structured/8eae2dce?organizationId=e641930e-16b4-43e2-b2ca-6d49399af522
+Routing method: md5(request_id) % 2
+V1 count: 29
+V2 count: 21
+========================================================================
+
+[01] request_id=day22-q01
+     version=v1
+     question=What is the main shift described in The New SDLC With Vibe Coding?
+     answer=The main shift described in "The New SDLC With Vibe Coding" is from writing code to expressing intent, and trusting intelligent systems to translate that intent into working software. This transition aims to reduce friction in software engineering by allowing developers to focus on specifying what the software should do rather than how it should be implemented.
+
+[02] request_id=day22-q02
+     version=v1
+     question=How is the developer's role changing in the new SDLC?
+     answer=The developer's role is evolving from a primary implementor to a system designer and quality arbiter. Key changes include:
+
+- **Conductor Mode**: Rapid implementation using AI coding agents.
+- **Orchestrator Mode**: Strategic planning, design, and oversight of AI-generated code.
+- **Requirements and Planning**: Direct involvement in refining requirements with AI tools.
+- **Design and Architecture**: Making and documenting structural decisions that AI implements.
+- **Testing and Quality Assurance**: Verifying, debugging, and ensuring the quality of AI-generated code.
+
+[03] request_id=day22-q03
+     version=v1
+     question=What is an AI agent?
+     answer=An AI agent is a software system that perceives a goal, plans steps to reach it, takes actions through tools, observes results, and iterates until the goal is met or a stopping condition is hit. Unlike a chatbot which waits for prompts, an agent runs its own loop, deciding what to do next at each step after being given a top-level goal.
+
+[04] request_id=day22-q04
+     version=v1
+     question=What are the five parts of an AI agent?
+     answer=The five parts of an AI agent are:
+- The model (reasoning engine)
+- Tools (connects the model to the world)
+- Memory (state retention across sessions)
+- Orchestration (runs the loop, assembles context, dispatches actions)
+- Deployment (turns prototype into a service)
+
+[05] request_id=day22-q05
+     version=v2
+     question=What is the role of the model in an AI agent?
+     answer=1. Definition:
+The model within an AI agent serves as the reasoning engine that processes the current context, makes decisions, and generates actions or outputs based on those decisions.
+
+2. Why it matters:
+Understanding the role of the model is crucial because it forms the core cognitive capability of the agent. The model's ability to perceive, plan, act, observe, and iterate directly influences the agent’s effectiveness in achieving its goals.
+
+3. SDLC or engineering implication:
+In the context of the new SDLC with vibe coding, the model plays a pivotal role during the implementation phase (Running the Harness). It is responsible for generating thoughts, tool calls, and messages based on the provided context. However, it's important to recognize that the overall behavior of an AI agent is not solely determined by the model but also heavily influenced by the harness, which provides state management, tool execution, feedback loops, and enforceable constraints. This highlights the need for developers to focus on configuring and calibrating the harness effectively alongside managing the model.
+
+[06] request_id=day22-q06
+     version=v2
+     question=What is the role of tools in an AI agent?
+     answer=1. Definition:
+Tools in an AI agent are components that connect the reasoning engine (model) to the external world. They enable the agent to interact with various systems and perform actions necessary for achieving its goals.
+
+2. Why it matters:
+The tools are crucial because they provide the means by which the agent can execute tasks, access data, and communicate with other agents or services. Without appropriate tools, an AI agent would be limited in its capabilities and unable to fulfill complex objectives.
+
+3. SDLC or engineering implication:
+In the context of the new Software Development Life Cycle (SDLC) with vibe coding, the role of tools is significant as it directly impacts how developers integrate and manage these components during the development process. Ensuring that the right tools are selected and properly configured can streamline the agent's functionality and enhance overall system performance. The adoption of open standards for tools and inter-agent communication, such as Model Context Protocol (MCP) and Agent2Agent (A2A), is essential to maintain flexibility and avoid re-platforming later in the development lifecycle.
+
+[07] request_id=day22-q07
+     version=v1
+     question=What is the role of memory in an AI agent?
+     answer=Memory in an AI agent allows it to recall past interactions, retrieve project-specific rules, and retain context across sessions. This prevents the agent from starting each interaction with a blank slate, enabling more coherent and contextually aware behavior over time.
+
+[08] request_id=day22-q08
+     version=v1
+     question=What is the role of orchestration in an AI agent?
+     answer=Orchestration in an AI agent runs the loop by assembling context for each model call, dispatching tool calls, capturing their results, and deciding whether to continue.
+
+[09] request_id=day22-q09
+     version=v1
+     question=What is the role of deployment in an AI agent?
+     answer=Deployment turns the prototype into a service by handling hosting, identity, observability, and the production infrastructure the agent runs on.
+
+[10] request_id=day22-q10
+     version=v2
+     question=What is vibe coding?
+     answer=1. Definition:
+Vibe coding refers to a new approach to programming described by Andrej Karpathy in February 2025. It emphasizes following one's intuition or "vibes" when writing code, rather than strictly adhering to syntax rules.
+
+2. Why it matters:
+Vibe coding represents a shift from traditional programming practices that focus on precise syntax and detailed instructions. By embracing this approach, developers can more easily leverage their creativity and experience to write effective code quickly.
+
+3. SDLC or engineering implication:
+In the context of the new software development life cycle (SDLC) with vibe coding, this method is part of a broader transformation towards agentic engineering. The continuous loop described in the paper, which includes the model, tools, memory, orchestration, and deployment, supports this shift by enabling developers to focus on their intent rather than the minutiae of code writing. This approach allows for more efficient prototyping and exploration phases, but requires careful management through a well-engineered harness to ensure quality and maintainability in production systems.
+
+[11] request_id=day22-q11
+     version=v1
+     question=Why did the term vibe coding become popular?
+     answer=The term "vibe coding" became popular because it captured a real practice where developers described what they wanted in natural language and accepted AI-generated output. This terminology resonated with many developers who were already working this way but lacked a specific name for their approach.
+
+[12] request_id=day22-q12
+     version=v1
+     question=What is agentic engineering?
+     answer=Agentic engineering involves a higher level of verification and discipline compared to vibe coding. In this approach, two mechanisms work together: tests verify deterministic parts of the system, while evaluations (evals) verify non-deterministic aspects. This ensures that the code works correctly under all conditions, addressing issues like production outages, security vulnerabilities, and maintenance nightmares.
+
+[13] request_id=day22-q13
+     version=v2
+     question=What is the key differentiator between vibe coding and agentic engineering?
+     answer=1. Definition:
+The key differentiator between vibe coding and agentic engineering lies in how outputs are verified and the level of structure and human judgment involved.
+
+2. Why it matters:
+This distinction is crucial because it affects the reliability, maintainability, and security of software development. Vibe coding relies on developer intuition and subjective verification, while agentic engineering employs rigorous testing and evaluation mechanisms to ensure correctness under all conditions.
+
+3. SDLC or Engineering Implication:
+In terms of the Software Development Life Cycle (SDLC), vibe coding is more suited for exploratory phases like prototyping where quick iterations are necessary. Agentic engineering, on the other hand, is essential for production systems that require high reliability and robustness. The choice between these approaches should align with the project's stakes and requirements, ensuring that critical software undergoes thorough verification processes to prevent issues in deployment.
+
+[14] request_id=day22-q14
+     version=v2
+     question=How does verification differ between vibe coding and agentic engineering?
+     answer=1. Verification in Vibe Coding:
+   - Optional: Developers run the code and check if it seems right.
+   
+2. Why it Matters:
+   - This approach can be efficient for quick prototyping or personal projects where thorough verification is not critical.
+   - However, it lacks rigor and may lead to subtle bugs or security vulnerabilities that only manifest under specific conditions.
+
+3. SDLC or Engineering Implication:
+   - In the context of the new SDLC with vibe coding, this approach can be appropriate for early stages like prototyping but should evolve as the project matures.
+   - For production systems handling critical tasks (like financial transactions), agentic engineering is necessary to ensure correctness and reliability.
+
+4. Verification in Agentic Engineering:
+   - Two mechanisms work together: tests verify deterministic parts of the system, ensuring functions behave as expected given inputs; evaluations or evals check the final artifact for compile errors and pass tests.
+   
+5. Why it Matters:
+   - This approach ensures that code is thoroughly tested and evaluated, reducing the risk of undetected bugs and security vulnerabilities in production systems.
+
+6. SDLC or Engineering Implication:
+   - Agentic engineering aligns with the new SDLC by integrating rigorous verification practices throughout development, from requirements to deployment.
+   - It emphasizes the importance of writing comprehensive tests and evaluations before generating code, ensuring that AI-assisted development is reliable and maintainable.
+
+[15] request_id=day22-q15
+     version=v2
+     question=When is pure vibe coding appropriate?
+     answer=1. Definition:
+   Pure vibe coding involves a development approach where verification of code outputs is optional. The developer runs the code and checks if it seems right based on their intuition or immediate feedback.
+
+2. Why it matters:
+   Vibe coding can be useful for rapid prototyping, ad-hoc projects, or situations with low stakes. It allows developers to quickly explore ideas without the overhead of rigorous testing and verification processes.
+
+3. SDLC or engineering implication:
+   For tasks that require quick iterations and exploration, vibe coding can significantly speed up development cycles. However, it should be used judiciously in production environments where correctness and reliability are critical. The appropriate use of vibe coding depends on understanding the context and stakes of each project.
+
+[16] request_id=day22-q16
+     version=v1
+     question=When does software development demand agentic engineering?
+     answer=Software development demands agentic engineering when AI acts as a powerful implementation engine within carefully designed systems of constraints, tests, and feedback loops, with humans retaining oversight over architecture, correctness, and quality. This approach ensures that the use of AI in development remains disciplined and reliable.
+
+[17] request_id=day22-q17
+     version=v1
+     question=What is context engineering?
+     answer=Context engineering involves balancing static and dynamic elements in AI agents. Static context includes system instructions, rule files, global memory, and persona definitions—always loaded but expensive due to constant presence. Dynamic context loads on demand, such as skill instructions, tool results, and session history, making it efficient by only paying token costs when needed. This trade-off is crucial for effective AI agent design.
+
+[18] request_id=day22-q18
+     version=v2
+     question=Why does context engineering matter more than clever prompting?
+     answer=1. Definition:
+Context engineering involves providing a dense, high-signal payload to AI agents, ensuring they receive precise and relevant information upfront rather than relying on noisy or sprawling data.
+
+2. Why it matters:
+Context engineering is crucial because it significantly enhances the first-pass success rate of AI-generated code. By providing clear and focused context, developers avoid costly trial-and-error loops that are common in vibe coding (ad-hoc prompting). This approach ensures that the AI agents can produce more accurate and reliable outputs from the outset.
+
+3. SDLC or engineering implication:
+In the new SDLC with vibe coding, effective context engineering is essential for optimizing operational efficiency (OpEx) and maintaining high-quality output. It allows developers to leverage advanced models effectively by routing deterministic tasks to smaller, faster models while reserving larger, more complex tasks for more powerful agents. This dynamic context management ensures that teams can maintain peak output quality while driving down token costs.
+
+By focusing on context engineering over clever prompting, developers can ensure that their AI tools are better aligned with the project's requirements and constraints from the start, leading to more efficient and effective development processes.
+
+[19] request_id=day22-q19
+     version=v2
+     question=What are the six primary types of context developers should consider?
+     answer=1. **Definition**: The six primary types of context that developers should consider when working with AI agents are:
+   - Instructions: The agent's core role, goals, and operational boundaries.
+   - Knowledge: Retrieved documents, architectural diagrams, and domain-specific data.
+   - Memory: Short-term session logs (what just happened) and long-term persistent state (what the project is).
+   - Examples: Few-shot behavioral demonstrations and codebase reference patterns.
+   - Tools: The precise definitions of the APIs, scripts, and external services the agent can invoke.
+   - Guardrails: Hard constraints, formatting rules, and safety validations.
+
+2. **Why it matters**: These types of context are crucial because they help ensure that AI-generated code is aligned with project requirements, adheres to best practices, and maintains quality standards. By providing rich, structured information about the codebase, architecture, conventions, and intent, developers can mitigate issues such as context rot from overloaded prompts and operational overhead.
+
+3. **SDLC or engineering implication**: In the new SDLC with vibe coding, these types of context are essential for transitioning from "prompt engineering" to "context engineering." This shift emphasizes that models don't need cleverly worded instructions as much as they need the same context a skilled human developer would need to do good work. Proper context engineering helps in designing and managing sessions, writing and evaluating skills, building persistent memory across interactions, and optimizing token economics for production systems.
+
+[20] request_id=day22-q20
+     version=v2
+     question=What is static context?
+     answer=1. Definition:
+Static context refers to the elements of an AI agent's knowledge and behavior that are always loaded into its memory, regardless of whether they are currently relevant to the task at hand. These include system instructions, rule files, global memory, and persona definitions.
+
+2. Why it matters:
+Understanding static context is crucial because it defines the fundamental identity and operational parameters of the AI agent. It ensures consistency in behavior across interactions and provides a stable foundation for dynamic context management.
+
+3. SDLC or engineering implication:
+In the context of the new software development life cycle with vibe coding, managing static context effectively is an essential architectural decision that impacts system design, performance, and maintainability. Properly balancing what belongs in static context versus dynamic context can optimize token usage and enhance overall agent efficiency while maintaining critical rules and behaviors.
+
+[21] request_id=day22-q21
+     version=v2
+     question=What is dynamic context?
+     answer=1. Definition:
+Dynamic context refers to the information that an AI agent retrieves on demand during execution, rather than having it pre-loaded in its static context. This includes skill instructions triggered by task matching, tool results, documents fetched from RAG pipelines, and windowed session history.
+
+2. Why it matters:
+Dynamic context is crucial because it allows agents to remain lightweight generalists that can flex into specialist roles as needed without being burdened with all the information upfront. This approach optimizes token usage and ensures that only relevant information is loaded, reducing unnecessary overhead.
+
+3. SDLC or engineering implication:
+In the context of the new SDLC with vibe coding, dynamic context plays a key role in managing the trade-off between static and dynamic elements. By carefully designing which knowledge and instructions are dynamically loaded, engineers can create more efficient and effective AI agents that can adapt to various tasks without compromising on performance or resource usage.
+
+[22] request_id=day22-q22
+     version=v1
+     question=Why can too much static context be harmful?
+     answer=Too much static context can waste tokens and dilute signals, as every token in the static context is present in every interaction, regardless of relevance. This makes the interactions less efficient and can lead to unnecessary complexity without adding value.
+
+[23] request_id=day22-q23
+     version=v1
+     question=What are Agent Skills used for?
+     answer=Agent Skills allow agents to remain lightweight generalists while flexing into specialist roles on demand. They load full instructions only when a task matches, pulling deep reference material as needed. This enables an agent to carry numerous specialized capabilities while incurring token costs only for the active one.
+
+[24] request_id=day22-q24
+     version=v1
+     question=What problems do Agent Skills help solve?
+     answer=Agent Skills help solve four problems:
+- Context rot from overloaded prompts
+- Absence of procedural memory for LLMs
+- Operational overhead of multi-agent architectures
+- Need for portability across tools and vendors
+
+[25] request_id=day22-q25
+     version=v2
+     question=How does AI compress the traditional SDLC?
+     answer=1. Definition:
+AI compresses the traditional Software Development Life Cycle (SDLC) by accelerating certain phases while maintaining or enhancing others, leading to a more fluid and rapid development process.
+
+2. Why it matters:
+The compression of the SDLC through AI is significant because it allows for faster delivery of software without compromising on quality. This can lead to quicker time-to-market, increased productivity, and better alignment with business needs.
+
+3. SDLC or engineering implication:
+- **Implementation Phase**: AI can generate entire features from natural-language descriptions, significantly reducing implementation time. However, this does not eliminate the need for human review and verification.
+- **Requirements and Planning Phase**: AI tools can directly participate in requirements refinement by generating user stories, identifying edge cases, producing API schemas, and creating interactive prototypes. This reduces the gap between stakeholder intent and technical implementation.
+- **Testing and Quality Assurance Phase**: AI transforms test generation itself, producing comprehensive tests that include edge cases and property-based tests. This ensures higher quality output from the start.
+
+Overall, AI's role in compressing the SDLC is to shift the focus from manual coding to more strategic tasks like defining context, making architectural decisions, and ensuring code quality through continuous evaluation and feedback loops.
+
+[26] request_id=day22-q26
+     version=v1
+     question=How does AI affect requirements and planning?
+     answer=AI affects requirements and planning by:
+- Generating user stories from product briefs.
+- Identifying edge cases that humans might miss.
+- Producing API schemas from natural-language descriptions.
+- Creating interactive prototypes from specification documents.
+These tools transform the process, making it more collaborative between humans and AI,
+resulting in simultaneous production of specifications and initial implementations.
+
+[27] request_id=day22-q27
+     version=v2
+     question=Why does architecture remain human-centric?
+     answer=1. Definition:
+Architecture in software development involves making trade-offs such as consistency vs. availability, complexity vs. flexibility, and build vs. buy. These decisions are fundamentally about balancing different aspects of a system that depend on the business context, organizational constraints, and long-term strategic considerations.
+
+2. Why it matters:
+These trade-offs require a deep understanding of the broader context in which the software will operate. AI tools excel at implementing architectural decisions once they are made but struggle to fully grasp the nuances required for making these initial decisions. Human expertise is crucial because architecture impacts the overall design and scalability of the system, influencing factors like performance, security, and maintainability.
+
+3. SDLC or engineering implication:
+In the new SDLC with AI assistance, architects play a critical role in defining the high-level structure and trade-offs that AI agents then implement. This means that while AI can automate much of the implementation work, human architects must still guide the process by setting clear goals and constraints. The architectural phase remains human-centric because it involves complex decision-making that requires contextual understanding and strategic thinking, which current AI tools cannot fully replicate.
+
+[28] request_id=day22-q28
+     version=v1
+     question=How does AI help once architectural decisions are made?
+     answer=AI excels at implementing architectural decisions once they are made. Given a clear architecture document, AI agents can scaffold entire applications, generate consistent patterns across modules, and ensure that new code conforms to established conventions. The developer's role shifts from writing boilerplate to making and documenting the structural decisions that boilerplate implements.
+
+[29] request_id=day22-q29
+     version=v1
+     question=How does AI transform implementation?
+     answer=AI transforms implementation by generating entire features from natural-language descriptions, implementing complex algorithms, and producing multi-file changes that work together correctly. This leads to productivity gains of 25 to 39%, though some tasks see larger improvements. However, the role of developers shifts to reviewing, guiding, and verifying AI output, as AI does not eliminate implementation work but transforms it.
+
+[30] request_id=day22-q30
+     version=v2
+     question=What did the METR study suggest about experienced developers using AI assistants?
+     answer=1. Definition:
+The METR study examined the impact of AI assistants on experienced developers' productivity.
+
+2. Why it matters:
+Understanding the findings from the METR study is crucial for software engineering teams to manage expectations and adjust their workflows when integrating AI tools into their development processes.
+
+3. SDLC or Engineering Implication:
+According to the METR study, experienced developers using AI assistants actually took 19% longer on certain tasks compared to working without AI assistance. This increase in time was largely due to the additional effort required for verifying, debugging, and correcting AI-generated output. This suggests that while AI can significantly enhance productivity by handling implementation work, it also introduces new challenges that require careful management of human oversight and verification processes.
+
+This finding highlights the need for teams to balance the benefits of AI with the importance of maintaining robust quality assurance practices. It underscores the evolving nature of the developer's role in an AI-driven SDLC, shifting from direct coding to more focused tasks such as reviewing, guiding, and verifying AI-generated code.
+
+[31] request_id=day22-q31
+     version=v1
+     question=How does AI change testing and quality assurance?
+     answer=AI transforms testing and quality assurance by:
+- Evaluating both the final artifact (does the code compile, do tests pass?) and the full sequence of tool calls and intermediate reasoning.
+- Generating test cases, including edge cases and property-based tests.
+- Making tests and evaluations the primary mechanism for communicating intent to AI agents.
+
+[32] request_id=day22-q32
+     version=v2
+     question=What is output evaluation?
+     answer=1. Definition: Output evaluation checks the final artifact produced by the development process to ensure it meets the required standards. This includes verifying whether the code compiles and passes all tests.
+
+2. Why it matters: It ensures that the final product is functional and meets the intended specifications, catching any issues before deployment or release.
+
+3. SDLC or engineering implication: In the context of the new SDLC with vibe coding, output evaluation is a critical step in the development process to validate the quality and correctness of the code generated by AI agents. It complements trajectory evaluation, which checks the full sequence of tool calls and intermediate reasoning, ensuring that even fluent outputs without visible errors are thoroughly verified for correctness.
+
+[33] request_id=day22-q33
+     version=v2
+     question=What is trajectory evaluation?
+     answer=Based on the provided context, trajectory evaluation does not have a direct definition given. However, it can be inferred that:
+
+1. **Definition**: Trajectory evaluation likely refers to assessing whether an AI agent has taken the correct sequence of steps or actions (trajectory) in its interactions and decision-making processes.
+
+2. **Why it matters**: This form of evaluation is crucial because it ensures that the AI agent follows a logical and effective path towards achieving its goals, which directly impacts the quality and reliability of the output.
+
+3. **SDLC or Engineering Implication**: In the context of the new SDLC with vibe coding, trajectory evaluation is part of the broader set of practices aimed at ensuring high-quality code through rigorous testing and validation. It complements other forms of evaluation (like final-response evals) to provide a comprehensive assessment of the AI agent's performance.
+
+While not explicitly defined in the provided context, it can be understood that trajectory evaluation is an essential component of the operational discipline around AI-assisted development, ensuring that the agents follow the intended paths and produce high-quality results.
+
+[34] request_id=day22-q34
+     version=v1
+     question=What is the continuous quality flywheel?
+     answer=The continuous quality flywheel involves evaluating code against a benchmark suite, diagnosing failures by clustering root causes, optimizing prompts or tools based on these diagnoses, verifying fixes with a regression suite, and monitoring production traffic for new failure modes. Each cycle compounds to improve the system's output quality.
+
+[35] request_id=day22-q35
+     version=v1
+     question=How is code review augmented by AI?
+     answer=AI serves as a first-pass reviewer that can identify potential bugs, style violations, security vulnerabilities, and performance issues before a human reviewer sees the code. This reduces the cognitive burden on reviewers but does not replace human judgment for context-dependent decisions about design, maintainability, and strategic alignment.
+
+[36] request_id=day22-q36
+     version=v1
+     question=Why does AI not replace human code review?
+     answer=AI serves as a first-pass reviewer that can identify potential bugs, style violations, security vulnerabilities, and performance issues before a human reviewer sees the code. However, context-dependent decisions about design, maintainability, and strategic alignment still require human judgment, so AI does not replace human review entirely.
+
+[37] request_id=day22-q37
+     version=v1
+     question=How can AI help with maintenance and evolution?
+     answer=AI can significantly aid in maintenance and evolution by:
+- Navigating and understanding legacy codebases that were once impenetrable.
+- Identifying relevant files for changes and implementing modifications while respecting existing architecture.
+- Systematically migrating codebases between frameworks, updating deprecated APIs, and modernizing test suites.
+
+[38] request_id=day22-q38
+     version=v2
+     question=What is the factory model of software development?
+     answer=1. Definition:
+The factory model of software development is an approach where developers design and maintain a system that produces code rather than writing code directly. This system includes specifications, agents, tests, feedback loops, and guardrails.
+
+2. Why it matters:
+This model shifts the focus from individual coding tasks to designing robust systems capable of producing high-quality code autonomously or with minimal human intervention. It emphasizes the importance of defining clear requirements, creating effective constraints, and establishing reliable verification mechanisms.
+
+3. SDLC or engineering implication:
+In the context of the new SDLC with vibe coding, the factory model implies that developers should prioritize configuring and maintaining a well-defined system over writing specific code. This approach ensures that even as AI agents evolve, the overall quality and reliability of the software remain consistent. The factory model supports the transition from syntax to intent by focusing on the broader context in which code is generated, ensuring that the output meets the required standards through systematic processes like testing and feedback loops.
+
+[39] request_id=day22-q39
+     version=v1
+     question=In the factory model, what does the developer design?
+     answer=In the factory model, the developer designs the system that produces code. This includes specifications, agents, tests, feedback loops, and guardrails.
+
+[40] request_id=day22-q40
+     version=v2
+     question=What is a harness in AI-assisted development?
+     answer=1. Definition:
+A harness in AI-assisted development refers to the comprehensive framework and infrastructure that surrounds an AI model or agent, providing it with the necessary tools, environments, and constraints to function effectively within the software development lifecycle (SDLC). It includes instructions, rule files, execution environments, orchestration logic, guardrails, and observability mechanisms.
+
+2. Why it matters:
+The harness is crucial because it transforms a raw AI model into an operational agent capable of producing high-quality code while ensuring security, compliance, and productivity. Without the harness, the AI's potential would be limited to uncontrolled outputs that could lead to errors or misuse.
+
+3. SDLC or engineering implication:
+In the context of the new SDLC with vibe coding, the harness is integral at every phase—requirements, planning, architecture; implementation; testing & QA; and code review, deployment, and maintenance. It ensures that AI agents operate within defined parameters, facilitating a structured approach to development that balances innovation with practical engineering principles.
+
+[41] request_id=day22-q41
+     version=v1
+     question=Why is the model alone not the whole agent?
+     answer=The model alone is not the whole agent because it needs additional components like tools, memory, orchestration, and deployment to function effectively. These parts work together in a continuous loop: get the mission, scan the scene, think it through, take action, observe and iterate. The harness, which includes instructions, tools, sandboxes, orchestration logic, guardrails, and observability, is essential for the model to actually finish tasks and produce reliable results.
+
+[42] request_id=day22-q42
+     version=v1
+     question=What components are included in a harness?
+     answer=A harness includes:
+- Instructions and Rule Files: Defining the agent's identity, what it cares about, and its constraints.
+- Tools: Functions, MCP servers, APIs, and related prose for calling them.
+- Sandboxes and execution environments: Where the agent runs and what resources it has access to.
+- Orchestration logic: Sub-agent spawning, model routing, and hand-offs between specialists.
+- Guardrails or Hooks: Deterministic code running at specific lifecycle points.
+- Observability: Logs, traces, evaluations, cost, and latency metering.
+
+[43] request_id=day22-q43
+     version=v1
+     question=What is the role of guardrails or hooks in the harness?
+     answer=Guardrails or hooks in the harness are deterministic code that runs at specific lifecycle points, such as before a tool call, after a file edit, or before a commit. These ensure the agent never forgets important actions but might occasionally overlook them. They serve as safety mechanisms to prevent the agent from breaking fundamental rules and to provide necessary oversight.
+
+[44] request_id=day22-q44
+     version=v2
+     question=Why is observability important in the harness?
+     answer=1. Definition:
+Observability in the context of the harness refers to the ability to monitor, log, trace, evaluate, and measure various aspects of the agent's behavior and performance within the SDLC phases.
+
+2. Why it matters:
+Observability is crucial because it enables developers and engineers to understand how the AI agents are performing in real-time. It provides visibility into the actions taken by the agents, their impact on the codebase, and any potential issues that may arise during different stages of development.
+
+3. SDLC or engineering implication:
+In the new SDLC with vibe coding, observability is essential for ensuring the reliability and maintainability of the software produced by AI agents. It helps in identifying when an agent might be drifting from its intended behavior, allowing for timely intervention to correct any deviations. This is particularly important during code review, deployment, and maintenance phases where the safety and quality of the deployed code are critical.
+
+By implementing observability features such as logs, traces, evaluations, cost and latency metering, engineers can continuously monitor the agent's performance and make informed decisions about its behavior in live or near-live environments. This ensures that the software remains dependable and aligns with the intended design and requirements throughout its lifecycle.
+
+[45] request_id=day22-q45
+     version=v2
+     question=How does harness configuration define the transition from vibe coding to agentic engineering?
+     answer=1. Definition:
+Harness configuration defines the level of deliberate and explicit scaffolding applied around AI agents during software development, distinguishing between vibe coding and agentic engineering.
+
+2. Why it matters:
+The difference lies in how comprehensively the harness is configured and used throughout the SDLC phases. Vibecoding relies on minimal or implicit scaffolding for rapid implementation, while agentic engineering employs extensive harness abstractions to guide AI from planning through production monitoring.
+
+3. SDLC or Engineering Implication:
+In vibe coding, developers might use an agent with little to no configuration of the harness, focusing mainly on quick prototyping and ad-hoc prompting. In contrast, in agentic engineering, the developer meticulously configures the harness by setting up instructions, rule files, tools, sandboxes, orchestration logic, guardrails, and observability mechanisms. This detailed setup ensures that the AI operates within well-defined boundaries, reducing errors and improving overall quality.
+
+The transition from vibe coding to agentic engineering is marked by a shift in how developers approach harness configuration:
+- Vibecoding: Minimal or implicit harness configuration.
+- Agentic Engineering: Clear, extensive harness abstractions guiding the AI throughout development phases.
+
+[46] request_id=day22-q46
+     version=v1
+     question=What is conductor mode?
+     answer=Conductor mode involves a developer working in real-time with an AI pair-programmer. The developer actively directs the AI's actions through prompts and corrections, maintaining fine-grained control over the code being written. This mode is typical when dealing with complex logic or unfamiliar codebases.
+
+[47] request_id=day22-q47
+     version=v1
+     question=What is orchestrator mode?
+     answer=Orchestrator mode involves operating at a higher level of abstraction where developers define goals and assign them to agents. Agents work in the background, potentially in parallel on different parts of a codebase. The developer periodically checks results, reviews output, and provides course corrections. This mode is typical for well-defined tasks like bug fixes, feature implementations against established patterns, codebase migrations, and test generation.
+
+[48] request_id=day22-q48
+     version=v2
+     question=What skills does orchestrator mode require?
+     answer=1. **Definition**: Orchestrator mode requires specific skill sets from developers to effectively manage and guide AI agents in their tasks.
+
+2. **Why it Matters**: These skills are crucial because they enable developers to leverage AI tools more efficiently, ensuring that the output meets quality standards while maintaining control over complex development processes.
+
+3. **SDLC or Engineering Implication**: In the context of the Software Development Life Cycle (SDLC), these skills help in defining and executing well-specified tasks, breaking down large projects into manageable units, evaluating agent outputs, and designing constraints and feedback loops to keep agents productive. This approach enhances the overall quality and reliability of software development by balancing AI's capabilities with human expertise.
+
+The required skills include:
+- **Specification**: Defining tasks precisely enough that an AI agent can execute them without ambiguity.
+- **Decomposition**: Breaking large tasks into appropriately sized units for agent execution.
+- **Evaluation**: Quickly assessing whether the output from agents meets quality standards.
+- **System Design**: Designing constraints, tests, and feedback loops to keep agents productive.
+
+[49] request_id=day22-q49
+     version=v2
+     question=What is the 80% problem in AI-assisted development?
+     answer=1. Definition:
+The 80% problem refers to a persistent challenge in AI-assisted development where AI agents can rapidly generate approximately 80% of the code for a feature, but struggle with the remaining 20%. This includes edge cases, error handling, integration points, and subtle correctness requirements.
+
+2. Why it matters:
+This issue highlights the limitations of current AI models in comprehending complex business logic, ambiguous requirements, and making architectural decisions that ensure long-term maintainability. It underscores the need for human oversight to address these nuanced aspects of software development.
+
+3. SDLC or engineering implication:
+In the context of the new SDLC with vibe coding, this problem implies a clear division of labor between AI agents and human developers. Developers should use AI for rapid implementation where it excels but reserve their attention for areas where AI struggles, such as ambiguous requirements and correctness verification. This approach ensures that both the speed benefits of AI and the quality assurance provided by human expertise are leveraged effectively.
+
+[50] request_id=day22-q50
+     version=v1
+     question=What are the three places coding agents show up in everyday developer work?
+     answer=Coding agents appear in three places in a developer's day:
+- In the editor: For inline completion, chat panels, and whole-codebase awareness.
+- In the terminal: For tasks requiring full file system access and multi-file edits.
+- In the background: For autonomous tasks running in cloud-hosted sandboxes.
+
