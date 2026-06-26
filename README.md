@@ -1,287 +1,369 @@
-# Chào mừng các bạn đến với Day 22: LangSmith + Prompt Versioning
+﻿# Day22 - LLMOps: Prompt Versioning, RAG Evaluation, and Guardrails
 
-## Tổng quan
+## Submission Information
 
-Trong lab này, bạn sẽ xây dựng một hệ thống hỏi đáp hoàn chỉnh tích hợp nhiều công nghệ AI hiện đại:
+Student: Thai Thi Yen Nhi  
+Student ID: 2A202600783  
+GitHub Repository: https://github.com/Lemin9802/Day22-Lab_2A202600783_Thai-Thi-Yen-Nhi  
+LangSmith Project: https://smith.langchain.com/o/e641930e-16b4-43e2-b2ca-6d49399af522/projects/p/884f2bd9-18f3-4def-94bf-41e33c3aaef4
 
-- **RAG Pipeline**: Xây dựng pipeline Retrieval-Augmented Generation sử dụng FAISS làm vector store và LangChain để kết nối các thành phần.
-- **LangSmith Tracing**: Theo dõi và quan sát toàn bộ luồng xử lý của ứng dụng LLM thông qua LangSmith dashboard.
-- **Prompt Hub & A/B Testing**: Quản lý phiên bản prompt trên LangSmith Prompt Hub và thực hiện A/B routing để so sánh hiệu quả giữa các phiên bản.
-- **RAGAS Evaluation**: Đánh giá chất lượng hệ thống RAG theo 4 chỉ số định lượng: faithfulness, answer relevancy, context recall, context precision.
-- **Guardrails AI**: Triển khai các bộ kiểm duyệt tự động để phát hiện thông tin cá nhân (PII) và sửa lỗi định dạng JSON trong đầu ra của LLM.
-
----
-
-## Mục tiêu học tập
-
-Sau khi hoàn thành lab này, bạn sẽ có thể:
-
-- Xây dựng và triển khai RAG pipeline hoàn chỉnh với LangChain LCEL và FAISS vector store.
-- Tích hợp LangSmith để theo dõi, gỡ lỗi và phân tích hiệu suất của ứng dụng LLM trong thực tế.
-- Quản lý vòng đời prompt bằng LangSmith Prompt Hub và thực hiện A/B testing có kiểm soát.
-- Đánh giá hệ thống RAG một cách định lượng bằng framework RAGAS với các chỉ số chuẩn công nghiệp.
-- Áp dụng Guardrails AI để xây dựng validator tùy chỉnh nhằm bảo vệ đầu ra của LLM khỏi dữ liệu nhạy cảm và lỗi định dạng.
+This repository contains the completed Day22 Track 2 LLMOps Prompt Versioning lab. The lab implements a PDF-based RAG pipeline, LangSmith tracing, Prompt Hub versioning, deterministic A/B routing, RAGAS evaluation, and Guardrails custom validators.
 
 ---
 
-## Yêu cầu trước
+## Completed Tasks
 
-Trước khi bắt đầu, hãy đảm bảo bạn đã có:
+## Task 1 - LangSmith RAG Pipeline
 
-- **Python 3.10 trở lên** — kiểm tra bằng lệnh `python --version`
-- **API key** của ít nhất một trong các nhà cung cấp LLM sau:
-  - OpenAI (`OPENAI_API_KEY`)
-  - Google Gemini (`GOOGLE_API_KEY`)
-  - Anthropic Claude (`ANTHROPIC_API_KEY`)
-  - OpenRouter (`OPENROUTER_API_KEY`)
-  - Ollama (chạy local, không cần API key)
-- **Tài khoản LangSmith** — đăng ký miễn phí tại [smith.langchain.com](https://smith.langchain.com) và lấy API key
+Implemented in:
 
----
+- `src/01_langsmith_rag_pipeline.py`
+- `src/utils/data_loader.py`
+- `src/utils/llm_factory.py`
+- `src/qa_pairs.py`
 
-## Cài đặt môi trường
+Main features:
 
-### 1. Cài thư viện
+- Loads the PDF knowledge base from `data/new_sdlc_vibe_coding.pdf`.
+- Splits the PDF into text chunks.
+- Builds a FAISS vectorstore.
+- Uses hybrid retrieval with FAISS + BM25.
+- Adds section-anchor retrieval for ambiguous topics such as AI agent components, harness, architecture, maintenance, and orchestrator skills.
+- Builds a RAG chain with LangChain Expression Language.
+- Uses `@traceable` to send RAG runs to LangSmith.
+- Runs 50 PDF-grounded questions.
 
-```bash
-pip install -r requirements.txt
-```
+Evidence:
 
-> Lần đầu cài có thể mất 5–10 phút do nhiều gói phụ thuộc.
+- `evidence/01_langsmith_traces.png`
+- `evidence/01_langsmith_project_overview.png`
 
-### 2. Cấu hình tệp `.env`
+LangSmith result:
 
-Sao chép tệp mẫu và điền thông tin của bạn:
-
-```bash
-cp .env.example .env
-```
-
-Mở tệp `.env` và điền các giá trị sau:
-
-```env
-# LangSmith — bắt buộc cho tất cả các bước
-LANGSMITH_API_KEY=lsv2_...
-LANGSMITH_PROJECT=day22-lab
-LANGCHAIN_TRACING_V2=true
-
-# Chọn một trong các provider bên dưới
-PROVIDER=openai
-
-# OpenAI (nếu dùng PROVIDER=openai)
-OPENAI_API_KEY=sk-...
-
-# Google Gemini (nếu dùng PROVIDER=gemini)
-GOOGLE_API_KEY=AIza...
-
-# Anthropic (nếu dùng PROVIDER=anthropic)
-ANTHROPIC_API_KEY=sk-ant-...
-
-# OpenRouter (nếu dùng PROVIDER=openrouter)
-OPENROUTER_API_KEY=sk-or-...
-```
-
-### 3. Chọn LLM provider
-
-Đặt biến `PROVIDER` trong `.env` thành một trong các giá trị sau:
-
-| Giá trị      | Nhà cung cấp      | Ghi chú                         |
-|--------------|-------------------|---------------------------------|
-| `openai`     | OpenAI GPT        | Mặc định, ổn định nhất          |
-| `gemini`     | Google Gemini     | Miễn phí với quota giới hạn     |
-| `anthropic`  | Anthropic Claude  | Chất lượng cao                  |
-| `ollama`     | Ollama (local)    | Không cần API key, cần GPU/CPU  |
-| `openrouter` | OpenRouter        | Tổng hợp nhiều model            |
-
-### 4. Xác minh cài đặt
-
-```bash
-cd src && python config.py
-```
-
-Nếu không có lỗi xuất hiện, bạn đã sẵn sàng bắt đầu.
+- Project: `day22-lab`
+- More than 50 successful traces
+- Error rate: 0%
 
 ---
 
-## Cấu trúc dự án
+## Task 2 - Prompt Hub and A/B Routing
 
-```
-Lab/
-├── src/
-│   ├── config.py                      # Tải .env, cấu hình providers
-│   ├── utils/
-│   │   ├── llm_factory.py             # Factory tạo LLM và Embeddings (5 providers)
-│   │   └── data_loader.py             # Load knowledge base, chunk, build FAISS
-│   ├── qa_pairs.py                    # 50 cặp câu hỏi + đáp án chuẩn
-│   ├── 01_langsmith_rag_pipeline.py   # Bước 1: RAG + LangSmith tracing
-│   ├── 02_prompt_hub_ab_routing.py    # Bước 2: Prompt Hub + A/B routing
-│   ├── 03_ragas_evaluation.py         # Bước 3: RAGAS evaluation (~15-30 phút)
-│   ├── 04_guardrails_validator.py     # Bước 4: Guardrails AI validators
-│   └── run_all.py                     # Chạy tất cả các bước
-├── data/
-│   ├── knowledge_base.txt             # Tài liệu nguồn cho RAG
-│   └── ragas_report.json              # Được tạo ra ở Bước 3
-├── evidence/                          # Nộp thư mục này lên GitHub
-│   ├── 01_langsmith_traces.png
-│   ├── 02_prompt_hub.png
-│   ├── 02_ab_routing_log.txt
-│   ├── 03_ragas_scores.png
-│   ├── 03_ragas_report.json
-│   ├── 04_pii_demo_log.txt
-│   └── 04_json_demo_log.txt
-├── .env.example                        # Template biến môi trường
-├── requirements.txt
-├── README.md
-├── rubric.md
-└── Guide.md
-```
+Implemented in:
 
----
+- `src/02_prompt_hub_ab_routing.py`
 
-## Các nhiệm vụ
+Main features:
 
-Lab được chia thành 4 nhiệm vụ, mỗi nhiệm vụ 25 điểm (tổng 100 điểm):
+- Creates two semantically different prompt versions.
+- Pushes both prompts to LangSmith Prompt Hub.
+- Pulls both prompts back from Prompt Hub before use.
+- Routes requests deterministically with `md5(request_id) % 2`.
+- Logs every request ID, selected version, question, and answer.
 
-| Nhiệm vụ | Tên                              | Điểm | Thời gian ước tính   |
-|----------|----------------------------------|------|----------------------|
-| 1        | RAG Pipeline với LangSmith       | 25đ  | 25–45 phút           |
-| 2        | Prompt Hub & A/B Routing         | 25đ  | 20–30 phút           |
-| 3        | RAGAS Evaluation                 | 25đ  | 45–75 phút           |
-| 4        | Guardrails AI Validators         | 25đ  | 20–30 phút           |
+Prompt versions:
 
-**Nhiệm vụ 1 — RAG Pipeline với LangSmith (25đ):** Xây dựng vector store từ knowledge base, tạo RAG chain, và tích hợp `@traceable` để ghi lại ít nhất 50 traces trên LangSmith dashboard.
+- V1: `day22-sdlc-vibe-coding-v1-concise`
+- V2: `day22-sdlc-vibe-coding-v2-structured`
 
-**Nhiệm vụ 2 — Prompt Hub & A/B Routing (25đ):** Soạn 2 system prompt có ngữ nghĩa khác biệt, đẩy lên LangSmith Prompt Hub, pull về khi chạy, và định tuyến câu hỏi theo hash của `request_id`.
+Prompt behavior:
 
-**Nhiệm vụ 3 — RAGAS Evaluation (25đ):** Chạy 50 cặp QA qua cả 2 phiên bản prompt, xây dựng `EvaluationDataset`, tính 4 chỉ số RAGAS, và đạt faithfulness ≥ 0.8 với ít nhất 1 phiên bản.
+- V1: concise factual RAG answer.
+- V2: structured engineering RAG answer.
 
-**Nhiệm vụ 4 — Guardrails AI Validators (25đ):** Triển khai `PIIDetector` tự động che thông tin cá nhân và `JSONFormatter` tự động sửa JSON lỗi từ đầu ra của LLM.
+Routing result:
+
+- V1 count: 29
+- V2 count: 21
+
+Evidence:
+
+- `evidence/02_prompt_hub.png`
+- `evidence/02_ab_routing_log.txt`
 
 ---
 
-## Chạy lab
+## Task 3 - RAGAS Evaluation
 
-### Chạy từng bước riêng lẻ
+Implemented in:
 
-```bash
-cd src
+- `src/03_ragas_evaluation.py`
 
-# Bước 1: RAG Pipeline với LangSmith tracing
-python 01_langsmith_rag_pipeline.py
+Main features:
 
-# Bước 2: Prompt Hub và A/B routing
-python 02_prompt_hub_ab_routing.py
+- Evaluates all 50 QA pairs through both prompt versions.
+- Total evaluated samples: 100.
+- Uses `SingleTurnSample` with `user_input`, `response`, `retrieved_contexts`, and `reference`.
+- Evaluates faithfulness, answer relevancy, context recall, and context precision.
+- Saves JSON, CSV, and chart evidence.
 
-# Bước 3: RAGAS evaluation (mất 15–30 phút)
-python 03_ragas_evaluation.py
+Full RAGAS result:
 
-# Bước 4: Guardrails AI validators
-python 04_guardrails_validator.py
-```
+| Metric | Overall | V1 | V2 |
+|---|---:|---:|---:|
+| Faithfulness | 0.9717 | 0.9543 | 0.9940 |
+| Answer relevancy | 0.8182 | 0.8472 | 0.7891 |
+| Context recall | 0.9617 | 0.9580 | 0.9654 |
+| Context precision | 0.8889 | 0.8333 | 0.9167 |
 
-### Chạy toàn bộ lab
+V1 vs V2 analysis:
 
-```bash
-cd src && python run_all.py
-```
+V1 achieved higher answer relevancy because it was designed to be concise and direct. Its responses stayed closer to the exact user question and avoided extra explanation unless needed.
 
-### Chạy một bước cụ thể
+V2 achieved higher faithfulness, context recall, and context precision because it used a structured engineering format. It often used more retrieved context and remained strongly grounded in the source material.
 
-```bash
-cd src && python run_all.py --step 3
-```
+Both prompt versions passed the faithfulness target by a wide margin.
 
----
+Evidence:
 
-## Nộp bài
-
-### 1. Tạo GitHub repository
-
-Tạo repository public mới trên GitHub với tên ví dụ `day22-langsmith-lab`.
-
-### 2. Thu thập bằng chứng (evidence)
-
-Đảm bảo thư mục `evidence/` chứa đầy đủ 7 tệp sau:
-
-```
-evidence/
-├── 01_langsmith_traces.png      ← Ảnh chụp màn hình LangSmith dashboard (≥ 50 traces)
-├── 02_prompt_hub.png            ← Ảnh chụp màn hình Prompt Hub (2 phiên bản)
-├── 02_ab_routing_log.txt        ← Output console của bước 2
-├── 03_ragas_scores.png          ← Ảnh chụp terminal hiển thị điểm RAGAS
-├── 03_ragas_report.json         ← Báo cáo JSON từ RAGAS
-├── 04_pii_demo_log.txt          ← Output console của PII detector
-└── 04_json_demo_log.txt         ← Output console của JSON formatter
-```
-
-### 3. Lưu output console vào tệp
-
-Sử dụng lệnh `tee` để vừa in ra màn hình vừa lưu vào tệp:
-
-```bash
-python script.py | tee evidence/output.txt
-```
-
-Ví dụ cụ thể:
-
-```bash
-python 02_prompt_hub_ab_routing.py | tee ../evidence/02_ab_routing_log.txt
-python 04_guardrails_validator.py  | tee ../evidence/04_pii_demo_log.txt
-```
-
-### 4. Push lên GitHub và nộp
-
-```bash
-git init
-git add .
-git commit -m "Day 22: LangSmith + Prompt Versioning lab submission"
-git remote add origin https://github.com/<tên-của-bạn>/day22-langsmith-lab.git
-git push -u origin main
-```
-
-Nộp URL GitHub repository và URL LangSmith project của bạn qua cổng nộp bài của khóa học.
+- `evidence/03_ragas_scores.png`
+- `evidence/03_ragas_report.json`
+- `evidence/03_ragas_rows.csv`
+- `data/ragas_report.json`
+- `evidence/README.md`
 
 ---
 
-## Tips và lưu ý
+## Task 4 - Guardrails Validators
 
-**LangSmith tracing — đặt biến môi trường đúng thứ tự:**
-Các biến `LANGCHAIN_TRACING_V2`, `LANGSMITH_API_KEY`, và `LANGSMITH_PROJECT` phải được đặt **trước khi import bất kỳ thứ gì từ LangChain**. Nếu import trước khi đặt biến, tracing sẽ không hoạt động.
+Implemented in:
 
-```python
-import os
-os.environ["LANGCHAIN_TRACING_V2"] = "true"   # Phải đặt trước
-os.environ["LANGSMITH_API_KEY"]    = "..."     # Phải đặt trước
-from langchain_core.prompts import ChatPromptTemplate  # Sau đó mới import
-```
+- `src/04_guardrails_validator.py`
 
-**RAGAS chậm — bắt đầu sớm:**
-Bước 3 sẽ mất từ 15 đến 30 phút để hoàn thành do phải gọi LLM cho mỗi sample trong bộ đánh giá. Hãy bắt đầu bước này ngay khi bước 2 xong, đặc biệt nếu bạn đang dùng model có rate limit thấp.
+Main features:
 
-**Guardrails AI — `on_fail` phải truyền đúng chỗ:**
-Tham số `on_fail` phải được truyền vào **constructor của validator**, không phải vào `Guard.use()`:
+### Custom PII Validator
 
-```python
-# ĐÚNG
-Guard().use(PIIDetector(on_fail=OnFailAction.FIX))
+Detects and redacts:
 
-# SAI — sẽ không hoạt động đúng
-Guard().use(PIIDetector(), on_fail=OnFailAction.FIX)
-```
+- Email addresses
+- Phone numbers
+- SSN-like numbers
+- Credit-card-like numbers
 
-**Bảo mật — không bao giờ commit `.env`:**
-Tệp `.env` chứa API key nhạy cảm. Đảm bảo `.gitignore` đã có dòng `.env` trước khi push lên GitHub. Chỉ commit tệp `.env.example` (không chứa giá trị thật). Vi phạm quy tắc này sẽ bị trừ 10 điểm tự động.
+Uses:
+
+- `PIIDetector(on_fail=OnFailAction.FIX)`
+
+Evidence:
+
+- `evidence/04_pii_demo_log.txt`
+
+### Custom JSON Formatter Validator
+
+Repairs:
+
+- Markdown fenced JSON
+- Single-quoted Python-style dictionaries
+- Trailing commas
+- Invalid JSON through fallback JSON
+
+Uses:
+
+- `JSONFormatter(on_fail=OnFailAction.FIX)`
+
+Evidence:
+
+- `evidence/04_json_demo_log.txt`
 
 ---
 
-## Tài liệu tham khảo
+## Repository Structure
 
-| Tài liệu                    | Đường dẫn                                                          |
-|-----------------------------|--------------------------------------------------------------------|
-| LangSmith Docs              | https://docs.smith.langchain.com                                   |
-| LangChain LCEL              | https://python.langchain.com/docs/concepts/lcel                    |
-| LangSmith Prompt Hub        | https://docs.smith.langchain.com/prompt-hub                        |
-| RAGAS Documentation         | https://docs.ragas.io                                              |
-| Guardrails AI               | https://www.guardrailsai.com/docs                                  |
-| FAISS (Facebook AI)         | https://faiss.ai                                                   |
-| LangChain FAISS Integration | https://python.langchain.com/docs/integrations/vectorstores/faiss  |
+Main files and folders:
+
+- `data/new_sdlc_vibe_coding.pdf`  
+  PDF knowledge base used as the single source of truth.
+
+- `data/ragas_report.json`  
+  Full RAGAS report saved in the data directory.
+
+- `evidence/README.md`  
+  Evidence summary, V1 vs V2 analysis, and run_all verification.
+
+- `evidence/01_langsmith_traces.png`  
+  LangSmith trace list screenshot.
+
+- `evidence/01_langsmith_project_overview.png`  
+  LangSmith project overview screenshot.
+
+- `evidence/02_prompt_hub.png`  
+  Prompt Hub screenshot showing both prompt versions.
+
+- `evidence/02_ab_routing_log.txt`  
+  A/B routing log showing deterministic routing results.
+
+- `evidence/03_ragas_scores.png`  
+  RAGAS score chart.
+
+- `evidence/03_ragas_report.json`  
+  Full RAGAS evidence report.
+
+- `evidence/03_ragas_rows.csv`  
+  Row-level RAGAS results.
+
+- `evidence/04_pii_demo_log.txt`  
+  Guardrails PII validator demo log.
+
+- `evidence/04_json_demo_log.txt`  
+  Guardrails JSON formatter demo log.
+
+- `src/01_langsmith_rag_pipeline.py`  
+  Task 1 RAG pipeline with LangSmith tracing.
+
+- `src/02_prompt_hub_ab_routing.py`  
+  Task 2 Prompt Hub push/pull and A/B routing.
+
+- `src/03_ragas_evaluation.py`  
+  Task 3 RAGAS evaluation.
+
+- `src/04_guardrails_validator.py`  
+  Task 4 Guardrails custom validators.
+
+- `src/qa_pairs.py`  
+  50 PDF-grounded QA pairs.
+
+- `src/run_all.py`  
+  Unified entrypoint for running lab steps.
+
+- `src/utils/data_loader.py`  
+  PDF loading, text splitting, FAISS, hybrid retriever, and section-anchor retriever.
+
+- `src/utils/llm_factory.py`  
+  LLM and embedding provider factory.
+
+---
+
+## Knowledge Base
+
+The original text knowledge base was replaced with a PDF-only knowledge base:
+
+- `data/new_sdlc_vibe_coding.pdf`
+
+The old `data/knowledge_base.txt` was intentionally removed because this submission uses the PDF as the single source of truth.
+
+---
+
+## Environment
+
+The implementation was run with:
+
+- Python 3.12
+- Ollama local provider
+- LLM model: `qwen2.5:7b`
+- Embedding model: `nomic-embed-text`
+- LangSmith project: `day22-lab`
+
+Required environment variables are documented in `.env.example`.
+
+The `.env` file is intentionally excluded from Git and was not committed.
+
+---
+
+## Installation
+
+Create and activate a virtual environment, then install dependencies:
+
+    pip install -r requirements.txt
+
+For local Ollama execution, make sure the required models are available:
+
+    ollama pull qwen2.5:7b
+    ollama pull nomic-embed-text
+
+---
+
+## How to Run Each Task
+
+Run individual task files:
+
+    python src/01_langsmith_rag_pipeline.py
+    python src/02_prompt_hub_ab_routing.py
+    python src/03_ragas_evaluation.py
+    python src/04_guardrails_validator.py
+
+Task 3 full RAGAS evaluation can take around one hour with local Ollama because it evaluates 100 samples.
+
+For a quick Task 3 smoke test:
+
+    python src/03_ragas_evaluation.py --limit 1
+    python src/03_ragas_evaluation.py --limit 2 --no-eval
+
+---
+
+## run_all.py Entrypoint
+
+The repository includes a unified entrypoint:
+
+- `src/run_all.py`
+
+Supported commands:
+
+    python src/run_all.py --help
+    python src/run_all.py --step 1
+    python src/run_all.py --step 2
+    python src/run_all.py --step 3
+    python src/run_all.py --step 4
+    python src/run_all.py --step all
+
+For quick RAGAS smoke tests:
+
+    python src/run_all.py --step 3 --ragas-limit 1
+    python src/run_all.py --step 3 --ragas-limit 2 --ragas-no-eval
+
+The following commands were tested successfully:
+
+- `python src/run_all.py --help`
+- `python src/run_all.py --step 4`
+- `python src/run_all.py --step 3 --ragas-limit 1 --ragas-no-eval`
+
+---
+
+## Evidence Index
+
+| Task | Evidence File | Description |
+|---|---|---|
+| Task 1 | `evidence/01_langsmith_traces.png` | LangSmith trace list showing RAG runs |
+| Task 1 | `evidence/01_langsmith_project_overview.png` | Project overview showing trace count and error rate |
+| Task 2 | `evidence/02_prompt_hub.png` | Prompt Hub screenshot showing V1 and V2 prompts |
+| Task 2 | `evidence/02_ab_routing_log.txt` | Deterministic A/B routing log |
+| Task 3 | `evidence/03_ragas_scores.png` | RAGAS score chart |
+| Task 3 | `evidence/03_ragas_report.json` | Full RAGAS report |
+| Task 3 | `evidence/03_ragas_rows.csv` | Row-level RAGAS results |
+| Task 4 | `evidence/04_pii_demo_log.txt` | PII validator demo log |
+| Task 4 | `evidence/04_json_demo_log.txt` | JSON formatter demo log |
+| Bonus | `evidence/README.md` | Summary, V1/V2 analysis, and run_all verification |
+
+---
+
+## Code Quality Notes
+
+The code is organized into reusable functions with docstrings across:
+
+- PDF loading and retrieval
+- RAG pipeline setup
+- Prompt Hub push/pull
+- Deterministic A/B routing
+- RAGAS evaluation
+- Guardrails validators
+- Unified `run_all.py` execution
+
+The implementation includes error handling and fallbacks, including:
+
+- PDF file validation
+- Empty PDF text validation
+- Hybrid retrieval and section-anchor retrieval
+- JSON repair and fallback JSON output
+- Guardrails `on_fail=OnFailAction.FIX`
+- RAGAS compatibility handling for evaluation calls
+
+---
+
+## Final Submission Links
+
+GitHub repository:
+
+- https://github.com/Lemin9802/Day22-Lab_2A202600783_Thai-Thi-Yen-Nhi
+
+LangSmith project:
+
+- https://smith.langchain.com/o/e641930e-16b4-43e2-b2ca-6d49399af522/projects/p/884f2bd9-18f3-4def-94bf-41e33c3aaef4
